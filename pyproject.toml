@@ -32,12 +32,20 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Qiskit >= 2.1 makes `symengine` optional (it is only used for legacy QPY
+# deserialization, which we do not need). Older Qiskit hard-required it, forcing a
+# from-source build that needs a C++/CMake toolchain and has no wheel on newer
+# Python/Windows combinations. Pinning >= 2.1 avoids installing symengine entirely.
 quantum = [
-    "qiskit>=1.2,<2.0",
-    "qiskit-aer>=0.15",
-    "qiskit-ibm-runtime>=0.28",
+    "qiskit>=2.1,<3.0",
+    "qiskit-aer>=0.16",
     "pylatexenc>=2.10",  # required for circuit.draw('mpl')
     "matplotlib>=3.8",
+]
+# Phase 2 (real IBM Quantum hardware) only. Kept separate so the Phase 1 quantum
+# install stays lean.
+hardware = [
+    "qiskit-ibm-runtime>=0.30",
 ]
 dev = [
     "pytest>=8.0",
@@ -71,9 +79,30 @@ python_version = "3.10"
 strict = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+# Qiskit ships partial/py.typed stubs; treat its dynamic surface as Any rather
+# than failing strict mode, and don't flag the resulting Any returns. This keeps
+# CI (which installs only the classical [dev] extras) green while still fully
+# type-checking our own code.
+warn_return_any = false
 files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["qiskit.*", "qiskit_aer.*"]
+ignore_missing_imports = true
+
+# numpy's shipped stubs use PEP 695 `type` syntax gated to 3.12+, which trips mypy
+# when configured for an older target. We don't need to type-check numpy itself;
+# skip following it and treat its surface as Any.
+[[tool.mypy.overrides]]
+module = ["numpy"]
+ignore_missing_imports = true
+follow_imports = "skip"
+follow_imports_for_stubs = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+markers = [
+    "slow: end-to-end simulator runs (deselect with '-m \"not slow\"')",
+]

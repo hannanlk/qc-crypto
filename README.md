@@ -23,8 +23,8 @@ cybersecurity professionals, CS students, and researchers.
 
 | Phase | Theme | Status |
 |------:|-------|--------|
-| **0** | Why RSA works; classical factoring baselines | ✅ this release |
-| 1 | Shor's algorithm on a simulator (period-finding → factors) | planned |
+| **0** | Why RSA works; classical factoring baselines | ✅ done |
+| **1** | Shor's algorithm on a simulator (period-finding → factors) | 🔨 in progress |
 | 2 | Shor on real IBM Quantum hardware (reduced/compiled, honestly framed) | planned |
 | 3 | Grover's algorithm and why AES survives | planned |
 | 4 | ML-KEM (FIPS 203) — the post-quantum replacement | planned |
@@ -53,6 +53,15 @@ qcrypto rsa-demo
 
 # Factor an integer with a chosen classical method and see the timing:
 qcrypto factor 8051 --method pollard_rho
+```
+
+Phase 1 (Shor on the Aer simulator) needs the quantum extra:
+
+```bash
+python -m pip install -e ".[quantum]"
+
+# Factor N = 21 with Shor's algorithm, stage by stage:
+qcrypto shor-demo
 ```
 
 ## Project layout

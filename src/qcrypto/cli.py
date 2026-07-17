@@ -165,6 +165,116 @@ def factor_cmd(
     console.print(table)
 
 
+@app.command("shor-demo")
+def shor_demo(
+    n: Annotated[int, typer.Option(help="Odd composite to factor.")] = 21,
+    base: Annotated[int | None, typer.Option(help="Coprime base a; default 2.")] = None,
+    shots: Annotated[int, typer.Option(help="Number of measurement shots.")] = 2048,
+    counting_qubits: Annotated[
+        int | None, typer.Option(help="Counting-register width; default 2·ceil(log2 N).")
+    ] = None,
+    seed: Annotated[int, typer.Option(help="Simulator seed for reproducibility.")] = 42,
+) -> None:
+    """Factor N with Shor's algorithm on the Aer simulator, stage by stage.
+
+    Requires the quantum extra:  pip install -e ".[quantum]"
+    """
+    import importlib.util
+
+    if importlib.util.find_spec("qiskit") is None:  # pragma: no cover - optional extra
+        console.print(f"[{_DANGER}]Qiskit is not installed.[/{_DANGER}] Install the quantum extra:")
+        # markup=False so Rich doesn't parse the '[quantum]' extra as a style tag.
+        console.print('  pip install -e ".[quantum]"', markup=False)
+        raise typer.Exit(code=1)
+
+    from qcrypto.quantum import shor
+
+    total = 5
+
+    # Step 1 — the reduction.
+    a = base if base is not None else 2
+    reduction = Text()
+    reduction.append("Shor does not attack RSA directly. It factors N, and\n", style="dim")
+    reduction.append("factoring reduces to ", style="dim")
+    reduction.append("order-finding", style=f"bold {_ACCENT}")
+    reduction.append(":\n\n", style="dim")
+    reduction.append("  find the smallest r with  a^r ≡ 1 (mod N)\n")
+    reduction.append(f"  N = {n}    base a = {a}\n", style="bold")
+    reduction.append("\nThe order r is classically hard and quantum-mechanically easy.")
+    _step(1, total, "Reduce factoring to order-finding", reduction)
+
+    # Run the algorithm.
+    result = shor.factor(n, base=base, n_count=counting_qubits, shots=shots, seed=seed)
+
+    if result.lucky_base:
+        assert result.factors is not None
+        lucky = Text()
+        lucky.append(f"gcd(a, N) = {result.factors[0]} > 1 — a shares a factor with N.\n")
+        lucky.append(f"Factors of {n}: {result.factors} (no circuit needed).", style=_OK)
+        _step(2, total, "Lucky base (classical shortcut)", lucky, style=_OK)
+        return
+
+    # Step 2 — the circuit.
+    circ = Table.grid(padding=(0, 2))
+    circ.add_column(justify="right", style="dim")
+    circ.add_column(style="bold")
+    circ.add_row("counting qubits (phase readout)", str(result.n_count))
+    circ.add_row("work qubits (holds a^x mod N)", str(n.bit_length()))
+    circ.add_row("total qubits", str(result.num_qubits))
+    circ.add_row("circuit depth (transpiled)", str(result.circuit_depth))
+    _step(2, total, "Build the order-finding circuit", circ)
+
+    # Step 3 — measurement outcomes.
+    top = sorted(result.counts.items(), key=lambda kv: -kv[1])[:6]
+    meas = Table(box=None)
+    meas.add_column("bitstring", style="dim")
+    meas.add_column("measured m", justify="right")
+    meas.add_column("phase m/2^t", justify="right")
+    meas.add_column("shots", justify="right", style="bold")
+    for bitstring, freq in top:
+        m = int(bitstring.replace(" ", ""), 2)
+        meas.add_row(bitstring, str(m), f"{m / (1 << result.n_count):.4f}", str(freq))
+    _step(3, total, "Measure the counting register (top outcomes)", meas)
+
+    # Step 4 — recover the period.
+    period = Text()
+    if result.order is not None:
+        period.append("Continued fractions of the measured phases recover:\n\n", style="dim")
+        period.append(f"  order r = {result.order}\n", style=f"bold {_ACCENT}")
+        period.append(
+            f"  check: {a}^{result.order} mod {n} = {pow(a, result.order, n)}  (≡ 1 ✓)", style=_OK
+        )
+    else:
+        period.append("No usable order recovered — try more shots or another base.", style=_WARN)
+    _step(
+        4,
+        total,
+        "Recover the period via continued fractions",
+        period,
+        style=_ACCENT if result.order else _WARN,
+    )
+
+    # Step 5 — factors.
+    final = Text()
+    if result.success and result.factors is not None:
+        p, q = result.factors
+        half = result.order // 2  # type: ignore[operator]
+        final.append(f"r = {result.order} is even and a^(r/2) ≠ −1 (mod N), so:\n\n", style="dim")
+        final.append(f"  gcd({a}^{half} ± 1, {n})  →  ({p}, {q})\n", style=f"bold {_OK}")
+        final.append(f"\n{n} = {p} × {q}", style=f"bold {_OK}")
+        final.append(
+            "\n\nThis is the same factorisation Phase 0 got classically — but via a "
+            "polynomial-time quantum route. On a real fault-tolerant machine, this is "
+            "what would recover an RSA private key.",
+            style="italic",
+        )
+        _step(5, total, "Factor N — and close the loop to RSA", final, style=_OK)
+    else:
+        final.append("This run did not yield factors (an expected probabilistic outcome).\n")
+        final.append("Re-run with more shots or a different base.", style=_WARN)
+        _step(5, total, "Factor N", final, style=_WARN)
+
+
 def main() -> None:
     """Console-script entry point."""
     app()

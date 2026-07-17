@@ -1,7 +1,7 @@
 """Regenerate the 'exponential wall' figure (docs/article/figures/03-exponential-wall).
 
-This is the reproducible source for the article's headline chart: the number of
-operations needed to factor an ``n``-bit modulus, classically vs. with Shor's
+This is the reproducible source for the article's headline chart: how many
+operations it takes to factor an ``n``-bit modulus, classically vs. with Shor's
 algorithm. The committed SVG is a hand-tuned rendering of exactly these numbers;
 run this script to regenerate raster/vector versions or to tweak the model.
 
@@ -19,6 +19,11 @@ Modelling notes (all heuristic — the *shape* is the point, not 3-sig-fig cost)
 * Shor's algorithm: polynomial; we use a ~b^3 gate-count scaling as an
   illustrative stand-in (true circuits are ~b^2 log b to b^3 depending on the
   arithmetic). This is deliberately schematic and labelled as such.
+
+Implementation note: every quantity is computed in **log10 space**. The raw
+operation counts (e.g. 2^1024 for trial division at 2048 bits) exceed the range
+of a 64-bit float and would overflow; working with exponents keeps the maths
+exact and is exactly what a log-scaled axis displays anyway.
 """
 
 from __future__ import annotations
@@ -27,34 +32,37 @@ import math
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 
 FIGURES_DIR = Path(__file__).resolve().parents[1] / "docs" / "article" / "figures"
 BIT_SIZES: tuple[int, ...] = (64, 128, 256, 512, 1024, 2048)
 
-
-def trial_division_ops(bits: int) -> float:
-    """Naive baseline: ~2^(b/2) operations."""
-    return 2.0 ** (bits / 2)
+_LN10 = math.log(10)
 
 
-def gnfs_ops(bits: int) -> float:
-    """Best known classical: L_n[1/3, (64/9)^(1/3)]."""
+def trial_division_log10(bits: int) -> float:
+    """log10 of the naive baseline ~2^(b/2)."""
+    return (bits / 2) * math.log10(2)
+
+
+def gnfs_log10(bits: int) -> float:
+    """log10 of the GNFS heuristic complexity L_n[1/3, (64/9)^(1/3)]."""
     ln_n = bits * math.log(2)
     c = (64 / 9) ** (1 / 3)
-    return math.exp(c * ln_n ** (1 / 3) * math.log(ln_n) ** (2 / 3))
+    natural_log_ops = c * ln_n ** (1 / 3) * math.log(ln_n) ** (2 / 3)
+    return natural_log_ops / _LN10
 
 
-def shor_ops(bits: int) -> float:
-    """Illustrative polynomial (quantum) gate-count scaling, ~b^3."""
-    return float(bits) ** 3
+def shor_log10(bits: int) -> float:
+    """log10 of the illustrative polynomial (quantum) ~b^3 gate-count."""
+    return 3 * math.log10(bits)
 
 
 def build_figure() -> plt.Figure:
-    """Construct the styled figure on a white background."""
-    trial = [trial_division_ops(b) for b in BIT_SIZES]
-    gnfs = [gnfs_ops(b) for b in BIT_SIZES]
-    shor = [shor_ops(b) for b in BIT_SIZES]
+    """Construct the styled figure on a white background (y-axis in log10)."""
+    trial = [trial_division_log10(b) for b in BIT_SIZES]
+    gnfs = [gnfs_log10(b) for b in BIT_SIZES]
+    shor = [shor_log10(b) for b in BIT_SIZES]
 
     fig, ax = plt.subplots(figsize=(9.2, 5.4), dpi=150)
     fig.patch.set_facecolor("white")
@@ -65,11 +73,15 @@ def build_figure() -> plt.Figure:
     ax.plot(BIT_SIZES, shor, color="#2563eb", lw=2.5, marker="o", label="Shor (quantum, FT)")
 
     ax.set_xscale("log", base=2)
-    ax.set_yscale("log")
     ax.set_xticks(BIT_SIZES)
     ax.set_xticklabels([str(b) for b in BIT_SIZES])
-    ax.set_ylim(1, 1e60)
-    ax.yaxis.set_major_locator(LogLocator(base=10, numticks=7))
+
+    # y-axis holds log10(operations); label ticks as powers of ten and clip the
+    # view at 10^60 so the readable curves aren't crushed by trial division's
+    # off-the-chart growth.
+    ax.set_ylim(0, 60)
+    ax.yaxis.set_major_locator(MultipleLocator(10))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _pos: f"$10^{{{int(v)}}}$"))
 
     ax.set_xlabel("modulus size (bits)", fontsize=12, fontweight="bold")
     ax.set_ylabel("operations to factor (log scale)", fontsize=12, fontweight="bold")
@@ -84,19 +96,19 @@ def build_figure() -> plt.Figure:
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
 
-    # Annotate the RSA-2048 gap.
+    # Annotate the RSA-2048 gap (coordinates are in log10 units).
     ax.annotate(
-        "≈10³⁵ ops — best classical",
+        "≈$10^{35}$ ops — best classical",
         xy=(2048, gnfs[-1]),
-        xytext=(300, 1e33),
+        xytext=(300, 33),
         color="#b45309",
         fontsize=10,
         fontweight="bold",
     )
     ax.annotate(
-        "≈10¹⁰ ops — Shor",
+        "≈$10^{10}$ ops — Shor",
         xy=(2048, shor[-1]),
-        xytext=(300, 1e7),
+        xytext=(300, 7),
         color="#1d4ed8",
         fontsize=10,
         fontweight="bold",
