@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 470" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="920" height="470" fill="#ffffff"/>
+
+  <text x="40" y="44" font-size="25" font-weight="700" fill="#0f172a">ML-KEM: Key Encapsulation, Not Encryption</text>
+  <text x="40" y="68" font-size="14" fill="#475569">Both parties end up with the same 32-byte shared secret, which then keys a symmetric cipher (e.g. AES-256).</text>
+
+  <!-- Receiver column -->
+  <text x="150" y="112" font-size="13" font-weight="700" letter-spacing="1" fill="#2563eb" text-anchor="middle">RECEIVER</text>
+  <rect x="40" y="126" width="220" height="70" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="56" y="150" font-size="13" font-weight="600" fill="#1e293b">1 · keygen()</text>
+  <text x="56" y="170" font-size="12.5" fill="#334155" font-family="Consolas, monospace">ek (public) 1184 B</text>
+  <text x="56" y="187" font-size="12.5" fill="#b91c1c" font-family="Consolas, monospace">dk (secret) 2400 B</text>
+
+  <rect x="40" y="300" width="220" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="56" y="324" font-size="13" font-weight="600" fill="#15803d">4 · decaps(dk, ct)</text>
+  <text x="56" y="346" font-size="12.5" fill="#334155" font-family="Consolas, monospace">→ shared secret K</text>
+  <text x="56" y="368" font-size="12" fill="#64748b">recovers the same 32-byte K</text>
+
+  <!-- Sender column -->
+  <text x="770" y="112" font-size="13" font-weight="700" letter-spacing="1" fill="#d97706" text-anchor="middle">SENDER</text>
+  <rect x="660" y="200" width="220" height="92" rx="8" fill="#fff7ed" stroke="#d97706"/>
+  <text x="676" y="224" font-size="13" font-weight="600" fill="#b45309">3 · encaps(ek)</text>
+  <text x="676" y="246" font-size="12.5" fill="#334155" font-family="Consolas, monospace">→ shared secret K</text>
+  <text x="676" y="266" font-size="12.5" fill="#334155" font-family="Consolas, monospace">→ ciphertext ct 1088 B</text>
+  <text x="676" y="284" font-size="12" fill="#64748b">K never leaves the sender</text>
+
+  <!-- Arrows -->
+  <!-- ek to sender -->
+  <path d="M260,150 C440,150 500,240 660,240" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a1)"/>
+  <text x="460" y="180" font-size="12.5" fill="#64748b" text-anchor="middle">public key ek  →</text>
+
+  <!-- ct back to receiver -->
+  <path d="M660,270 C480,300 360,320 260,335" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#a1)"/>
+  <text x="460" y="330" font-size="12.5" fill="#64748b" text-anchor="middle">ciphertext ct  →</text>
+
+  <!-- shared secret equals -->
+  <rect x="330" y="392" width="260" height="34" rx="8" fill="#f8fafc" stroke="#16a34a"/>
+  <text x="460" y="414" font-size="13" fill="#15803d" text-anchor="middle" font-weight="700">both hold identical shared secret K (32 B)</text>
+
+  <text x="40" y="452" font-size="11.5" fill="#94a3b8">Sizes shown for ML-KEM-768 (NIST Category 3). Security rests on Module-LWE — hard for all known quantum algorithms (not proven hard).</text>
+</svg>

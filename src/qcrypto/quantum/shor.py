@@ -103,6 +103,7 @@ def factor(
     shots: int = 2048,
     backend: str = "aer",
     seed: int | None = None,
+    backend_name: str | None = None,
 ) -> ShorResult:
     """Attempt to factor ``modulus`` with Shor's algorithm.
 
@@ -144,7 +145,9 @@ def factor(
 
     from qcrypto.backends import run_counts
 
-    counts = run_counts(circuit, shots=shots, backend=backend, seed=seed)
+    counts = run_counts(
+        circuit, shots=shots, backend=backend, seed=seed, backend_name=backend_name
+    )
 
     result = ShorResult(
         modulus=modulus,

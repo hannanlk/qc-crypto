@@ -174,10 +174,16 @@ def shor_demo(
         int | None, typer.Option(help="Counting-register width; default 2·ceil(log2 N).")
     ] = None,
     seed: Annotated[int, typer.Option(help="Simulator seed for reproducibility.")] = 42,
+    backend: Annotated[str, typer.Option(help="aer (simulator) or ibm (hardware).")] = "aer",
+    ibm_backend: Annotated[
+        str | None, typer.Option(help="Specific IBM device name (with --backend ibm).")
+    ] = None,
 ) -> None:
-    """Factor N with Shor's algorithm on the Aer simulator, stage by stage.
+    """Factor N with Shor's algorithm, stage by stage.
 
-    Requires the quantum extra:  pip install -e ".[quantum]"
+    Runs on the Aer simulator by default; pass --backend ibm to run on real IBM
+    Quantum hardware (requires the hardware extra and saved credentials — see
+    docs/ibm-quantum-setup.md). Requires the quantum extra:  pip install -e ".[quantum]"
     """
     import importlib.util
 
@@ -204,7 +210,20 @@ def shor_demo(
     _step(1, total, "Reduce factoring to order-finding", reduction)
 
     # Run the algorithm.
-    result = shor.factor(n, base=base, n_count=counting_qubits, shots=shots, seed=seed)
+    if backend == "ibm":
+        console.print(
+            f"  [{_WARN}]Running on IBM hardware — expect queueing, and a noisy result "
+            f"that will likely NOT cleanly recover the period. That gap is the point.[/{_WARN}]\n"
+        )
+    result = shor.factor(
+        n,
+        base=base,
+        n_count=counting_qubits,
+        shots=shots,
+        seed=seed,
+        backend=backend,
+        backend_name=ibm_backend,
+    )
 
     if result.lucky_base:
         assert result.factors is not None
@@ -273,6 +292,165 @@ def shor_demo(
         final.append("This run did not yield factors (an expected probabilistic outcome).\n")
         final.append("Re-run with more shots or a different base.", style=_WARN)
         _step(5, total, "Factor N", final, style=_WARN)
+
+
+@app.command("grover-demo")
+def grover_demo(
+    qubits: Annotated[int, typer.Option(help="Search space is 2^qubits items.")] = 4,
+    marked: Annotated[int, typer.Option(help="Index of the item to find.")] = 9,
+    shots: Annotated[int, typer.Option(help="Number of measurement shots.")] = 2048,
+    seed: Annotated[int, typer.Option(help="Simulator seed for reproducibility.")] = 42,
+) -> None:
+    """Grover search on a toy space, then why AES survives quantum attacks.
+
+    Requires the quantum extra:  pip install -e ".[quantum]"
+    """
+    import importlib.util
+
+    if importlib.util.find_spec("qiskit") is None:  # pragma: no cover - optional extra
+        console.print(f"[{_DANGER}]Qiskit is not installed.[/{_DANGER}] Install the quantum extra:")
+        console.print('  pip install -e ".[quantum]"', markup=False)
+        raise typer.Exit(code=1)
+
+    from qcrypto.analysis.symmetric_security import grover_security_table
+    from qcrypto.quantum.grover import optimal_iterations, search
+
+    total = 5
+    n = 1 << qubits
+
+    # Step 1 — the problem.
+    problem = Text()
+    problem.append("Grover's algorithm searches an unstructured space:\n", style="dim")
+    problem.append("find one marked item with no hints, no ordering.\n\n", style="dim")
+    problem.append(f"  search space: 2^{qubits} = {n} items\n", style="bold")
+    problem.append(f"  marked item:  {marked}", style=f"bold {_ACCENT}")
+    _step(1, total, "The problem: unstructured search", problem)
+
+    # Step 2 — the quadratic speedup.
+    iters = optimal_iterations(qubits, 1)
+    speed = Table.grid(padding=(0, 2))
+    speed.add_column(justify="right", style="dim")
+    speed.add_column(style="bold")
+    speed.add_row("classical (avg queries)", f"~{n // 2}")
+    speed.add_row("Grover (queries ≈ √N)", f"~{iters} iterations")
+    speed.add_row("speedup", "quadratic (√N, not exponential)")
+    _step(2, total, "The quadratic speedup", speed)
+
+    # Run.
+    result = search(qubits, marked, shots=shots, seed=seed)
+
+    # Step 3 — measurement.
+    top = sorted(result.counts.items(), key=lambda kv: -kv[1])[:5]
+    meas = Table(box=None)
+    meas.add_column("state", style="dim")
+    meas.add_column("index", justify="right")
+    meas.add_column("shots", justify="right", style="bold")
+    for bitstring, freq in top:
+        meas.add_row(bitstring, str(int(bitstring.replace(" ", ""), 2)), str(freq))
+    _step(3, total, "Measure after amplitude amplification", meas)
+
+    # Step 4 — result.
+    res = Text()
+    marker = _OK if result.found else _WARN
+    res.append(f"most likely item: {result.top_state}\n", style=f"bold {marker}")
+    res.append(f"P(success) = {result.success_probability:.1%} in {iters} iterations", style=marker)
+    _step(4, total, "Result", res, style=marker)
+
+    # Step 5 — why AES survives.
+    sec = Table(title=None, box=None)
+    sec.add_column("cipher", style="dim")
+    sec.add_column("classical", justify="right")
+    sec.add_column("Grover", justify="right")
+    sec.add_column("NIST PQ cat.", justify="center")
+    for cipher in grover_security_table():
+        sec.add_row(
+            cipher.name,
+            f"2^{cipher.key_bits}",
+            f"2^{cipher.grover_bits}",
+            str(cipher.nist_pq_category),
+        )
+    _step(5, total, "Why AES survives: Grover only halves the exponent", sec, style=_ACCENT)
+    console.print(
+        f"  [{_ACCENT}]Key point:[/{_ACCENT}] Grover turns 2^k into ~2^(k/2) — and those "
+        "iterations are sequential, not parallelisable. Doubling the key size restores "
+        "full strength. There is no Shor-style collapse for symmetric crypto.\n"
+    )
+
+
+@app.command("mlkem-demo")
+def mlkem_demo(
+    parameter_set: Annotated[
+        str, typer.Option(help="ML-KEM-512 | ML-KEM-768 | ML-KEM-1024")
+    ] = "ML-KEM-768",
+) -> None:
+    """Run an ML-KEM (FIPS 203) key-encapsulation round trip and explain it.
+
+    Requires the pqc extra:  pip install -e ".[pqc]"
+    """
+    import importlib.util
+
+    if importlib.util.find_spec("kyber_py") is None:  # pragma: no cover - optional extra
+        console.print(f"[{_DANGER}]kyber-py is not installed.[/{_DANGER}] Install the pqc extra:")
+        console.print('  pip install -e ".[pqc]"', markup=False)
+        raise typer.Exit(code=1)
+
+    from qcrypto.pqc.mlkem import parameter_table, run_roundtrip
+
+    total = 5
+
+    # Step 1 — the problem.
+    problem = Text()
+    problem.append("Shor breaks RSA and ECC (Parts 1-2). Unlike AES, you cannot\n", style="dim")
+    problem.append("rescue them with bigger keys — they need ", style="dim")
+    problem.append("replacing", style=f"bold {_ACCENT}")
+    problem.append(".\n\n", style="dim")
+    problem.append("ML-KEM (FIPS 203, formerly Kyber) is NIST's standardised\n")
+    problem.append("lattice-based key-encapsulation mechanism.")
+    _step(1, total, "The problem: RSA/ECC must be replaced, not resized", problem)
+
+    # Step 2 — the intuition.
+    intuition = Text()
+    intuition.append("ML-KEM's security rests on Module Learning-With-Errors (MLWE):\n", style="dim")
+    intuition.append("recover a secret from noisy linear equations over a lattice.\n\n", style="dim")
+    intuition.append("No known quantum algorithm solves this efficiently — ", style="")
+    intuition.append("but note:\n", style="bold")
+    intuition.append('"no known attack" is not "proven secure".', style=_WARN)
+    _step(2, total, "The intuition: hard lattice problems", intuition)
+
+    # Step 3 — the round trip.
+    result = run_roundtrip(parameter_set)
+    rt = Text()
+    rt.append("Receiver publishes an encapsulation (public) key:\n", style="dim")
+    rt.append(f"  ek: {result.ek_len} bytes,  dk (secret): {result.dk_len} bytes\n\n")
+    rt.append("Sender encapsulates -> (shared secret, ciphertext):\n", style="dim")
+    rt.append(f"  ciphertext: {result.ct_len} bytes\n")
+    rt.append(f"  sender secret:   {result.shared_secret_sender.hex()[:32]}…\n")
+    rt.append(f"  receiver secret: {result.shared_secret_receiver.hex()[:32]}…\n\n")
+    if result.agreed:
+        rt.append("Both parties derived the identical 32-byte shared secret. ✓", style=_OK)
+    else:
+        rt.append("Shared secrets DIFFER — this should never happen.", style=_DANGER)
+    _step(3, total, f"Encapsulation round trip ({parameter_set})", rt,
+          style=_OK if result.agreed else _DANGER)
+
+    # Step 4 — the parameter sets.
+    sizes = Table(box=None)
+    sizes.add_column("parameter set", style="dim")
+    sizes.add_column("NIST cat.", justify="center")
+    sizes.add_column("ek (pub)", justify="right")
+    sizes.add_column("ciphertext", justify="right")
+    for p in parameter_table():
+        sizes.add_row(p.name, str(p.nist_level), f"{p.ek_bytes} B", f"{p.ct_bytes} B")
+    _step(4, total, "Standardised parameter sets (FIPS 203)", sizes)
+
+    # Step 5 — trade-offs / relevance.
+    tradeoff = Text()
+    tradeoff.append("Trade-off vs. RSA: an RSA-3072 public key is ~384 bytes; ML-KEM-768's\n", style="dim")
+    tradeoff.append("is ~1184 bytes. PQC keys/ciphertexts are larger — the cost of\n", style="dim")
+    tradeoff.append("quantum resistance. In practice ML-KEM is deployed in ", style="dim")
+    tradeoff.append("hybrid", style=f"bold {_ACCENT}")
+    tradeoff.append(" mode\n(e.g. X25519 + ML-KEM) so a break in either primitive is survivable.")
+    _step(5, total, "Trade-offs and real-world deployment", tradeoff, style=_ACCENT)
 
 
 def main() -> None:

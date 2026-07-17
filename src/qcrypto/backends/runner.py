@@ -26,16 +26,19 @@ def run_counts(
     backend: str = "aer",
     seed: int | None = None,
     optimization_level: int = 1,
+    backend_name: str | None = None,
 ) -> dict[str, int]:
     """Execute ``circuit`` and return measurement counts.
 
     Args:
         circuit: A measured circuit.
         shots: Number of repetitions.
-        backend: ``"aer"`` for the local simulator. ``"ibm"`` is reserved for
-            Phase 2 and currently raises with a pointer to the setup it needs.
-        seed: Optional simulator seed for reproducible demonstrations.
+        backend: ``"aer"`` for the local simulator, ``"ibm"`` for IBM Quantum
+            hardware (requires the hardware extra and saved credentials).
+        seed: Optional simulator seed for reproducible demonstrations (Aer only).
         optimization_level: Transpiler optimization level.
+        backend_name: For ``"ibm"``, a specific device name; ``None`` picks the
+            least-busy operational device.
 
     Returns:
         Mapping from measured bitstring to frequency.
@@ -43,9 +46,13 @@ def run_counts(
     if backend == "aer":
         return _run_aer(circuit, shots=shots, seed=seed, optimization_level=optimization_level)
     if backend == "ibm":
-        raise NotImplementedError(
-            "The IBM Quantum runtime backend is a Phase 2 deliverable and requires "
-            "account credentials. Use backend='aer' for Phase 1."
+        from qcrypto.backends.ibm import run_ibm
+
+        return run_ibm(
+            circuit,
+            shots=shots,
+            backend_name=backend_name,
+            optimization_level=max(optimization_level, 3),
         )
     raise ValueError(f"unknown backend {backend!r}")
 

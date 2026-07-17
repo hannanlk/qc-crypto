@@ -24,10 +24,10 @@ cybersecurity professionals, CS students, and researchers.
 | Phase | Theme | Status |
 |------:|-------|--------|
 | **0** | Why RSA works; classical factoring baselines | ✅ done |
-| **1** | Shor's algorithm on a simulator (period-finding → factors) | 🔨 in progress |
-| 2 | Shor on real IBM Quantum hardware (reduced/compiled, honestly framed) | planned |
-| 3 | Grover's algorithm and why AES survives | planned |
-| 4 | ML-KEM (FIPS 203) — the post-quantum replacement | planned |
+| **1** | Shor's algorithm on a simulator (period-finding → factors) | ✅ done |
+| 2 | Shor on real IBM Quantum hardware (reduced/compiled, honestly framed) | planned (needs IBM account) |
+| **3** | Grover's algorithm and why AES survives | ✅ done |
+| 4 | ML-KEM (FIPS 203) — the post-quantum replacement | 🔨 next |
 
 Each phase ships code, tests, diagrams, and a matching section of the companion
 article in [`docs/article/`](docs/article/).
@@ -62,6 +62,9 @@ python -m pip install -e ".[quantum]"
 
 # Factor N = 21 with Shor's algorithm, stage by stage:
 qcrypto shor-demo
+
+# Grover search on a toy space, then why AES survives quantum attacks:
+qcrypto grover-demo
 ```
 
 ## Project layout

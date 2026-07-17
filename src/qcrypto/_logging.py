@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import logging
 
-from rich.logging import RichHandler
-
 _CONFIGURED = False
 
 
@@ -29,6 +27,11 @@ def configure_logging(level: int = logging.INFO) -> None:
     if _CONFIGURED:
         logging.getLogger("qcrypto").setLevel(level)
         return
+
+    # Imported lazily so that merely obtaining a logger (get_logger, used across
+    # the library) never requires rich to be installed — only opting into
+    # rich-formatted output does.
+    from rich.logging import RichHandler
 
     handler = RichHandler(rich_tracebacks=True, show_path=False, markup=True)
     logger = logging.getLogger("qcrypto")

@@ -47,6 +47,12 @@ quantum = [
 hardware = [
     "qiskit-ibm-runtime>=0.30",
 ]
+# Phase 4 (post-quantum cryptography). kyber-py is a pure-Python FIPS 203 (ML-KEM)
+# reference implementation (educational; not side-channel hardened). We wrap it and
+# add the teaching layer rather than reimplementing lattice crypto ourselves.
+pqc = [
+    "kyber-py>=1.2",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
@@ -87,7 +93,7 @@ warn_return_any = false
 files = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["qiskit.*", "qiskit_aer.*"]
+module = ["qiskit.*", "qiskit_aer.*", "qiskit_ibm_runtime.*", "kyber_py.*"]
 ignore_missing_imports = true
 
 # numpy's shipped stubs use PEP 695 `type` syntax gated to 3.12+, which trips mypy
