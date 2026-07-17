@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Generated artifacts (diagrams, histograms, benchmark outputs)
+outputs/
+*.png
+!docs/**/*.png
+
+# IBM Quantum credentials — NEVER commit these
+.qiskit/
+qiskit-ibm.json
+*.token
+.env
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

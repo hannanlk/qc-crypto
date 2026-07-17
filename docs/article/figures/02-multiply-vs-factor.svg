@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 470" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="aGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="aRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+    <pattern id="bricks" width="24" height="16" patternUnits="userSpaceOnUse">
+      <rect width="24" height="16" fill="#fecaca"/>
+      <path d="M0,0 H24 M0,8 H24 M12,0 V8 M0,8 V16 M24,8 V16 M0,16 H24" stroke="#dc2626" stroke-width="1.5"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="920" height="470" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#0f172a">The Asymmetry That Secures RSA</text>
+  <text x="40" y="72" font-size="15" fill="#475569">Multiplying primes is easy; recovering them by factoring is believed to be hard. That gap is the whole security.</text>
+
+  <!-- ================= EASY LANE ================= -->
+  <text x="40" y="132" font-size="13" font-weight="700" letter-spacing="1.5" fill="#15803d">EASY  ·  MULTIPLY</text>
+
+  <rect x="60" y="150" width="80" height="56" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="100" y="184" font-size="18" fill="#166534" text-anchor="middle" font-family="Consolas, monospace">p</text>
+  <rect x="155" y="150" width="80" height="56" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="195" y="184" font-size="18" fill="#166534" text-anchor="middle" font-family="Consolas, monospace">q</text>
+
+  <text x="262" y="184" font-size="22" fill="#15803d" text-anchor="middle">×</text>
+
+  <line x1="288" y1="178" x2="470" y2="178" stroke="#16a34a" stroke-width="2.5" marker-end="url(#aGreen)"/>
+  <text x="378" y="168" font-size="12" fill="#16a34a" text-anchor="middle">polynomial time</text>
+
+  <rect x="480" y="150" width="220" height="56" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="590" y="184" font-size="17" fill="#14532d" text-anchor="middle" font-family="Consolas, monospace">n = p · q</text>
+
+  <text x="730" y="182" font-size="13" fill="#64748b">fast at any size</text>
+
+  <!-- ================= HARD LANE ================= -->
+  <text x="40" y="272" font-size="13" font-weight="700" letter-spacing="1.5" fill="#b91c1c">HARD  ·  FACTOR</text>
+
+  <rect x="480" y="290" width="220" height="56" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+  <text x="590" y="324" font-size="17" fill="#7f1d1d" text-anchor="middle" font-family="Consolas, monospace">n</text>
+
+  <!-- arrow going right->left (from n back to p,q), blocked by wall -->
+  <line x1="470" y1="318" x2="300" y2="318" stroke="#dc2626" stroke-width="2.5" marker-end="url(#aRed)"/>
+  <text x="392" y="308" font-size="12" fill="#dc2626" text-anchor="middle">super-polynomial time</text>
+
+  <!-- wall -->
+  <rect x="404" y="286" width="26" height="92" fill="url(#bricks)" stroke="#b91c1c"/>
+
+  <rect x="60" y="290" width="80" height="56" rx="8" fill="#fef2f2" stroke="#dc2626" opacity="0.55"/>
+  <text x="100" y="324" font-size="18" fill="#7f1d1d" text-anchor="middle" font-family="Consolas, monospace" opacity="0.7">p</text>
+  <rect x="155" y="290" width="80" height="56" rx="8" fill="#fef2f2" stroke="#dc2626" opacity="0.55"/>
+  <text x="195" y="324" font-size="18" fill="#7f1d1d" text-anchor="middle" font-family="Consolas, monospace" opacity="0.7">q</text>
+  <text x="148" y="368" font-size="12" fill="#94a3b8" text-anchor="middle">what the attacker wants back</text>
+
+  <!-- ================= CALLOUT ================= -->
+  <rect x="40" y="400" width="840" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="60" y="423" font-size="13.5" fill="#334155">For a 2048-bit modulus: multiplying takes <tspan font-weight="700" fill="#15803d">microseconds</tspan>, while the best known classical factoring needs <tspan font-weight="700" fill="#b91c1c">~10³⁵ operations</tspan>.</text>
+  <text x="60" y="442" font-size="13.5" fill="#334155">Shor's algorithm (Phase 1) is the quantum route <tspan font-style="italic">through</tspan> this wall — polynomial time on a fault-tolerant machine.</text>
+</svg>

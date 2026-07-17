@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 640" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="920" height="640" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#0f172a">How RSA Works</text>
+  <text x="40" y="72" font-size="15" fill="#475569">Key generation, then encryption and decryption — shown on the toy modulus n = 21</text>
+
+  <!-- ===================== KEY GENERATION ===================== -->
+  <text x="40" y="118" font-size="13" font-weight="700" letter-spacing="1.5" fill="#2563eb">KEY GENERATION</text>
+
+  <!-- Box 1: primes -->
+  <rect x="40" y="132" width="220" height="82" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="56" y="158" font-size="14" font-weight="600" fill="#0f172a">1 · Secret primes</text>
+  <text x="56" y="184" font-size="15" fill="#334155" font-family="Consolas, monospace">p = 3</text>
+  <text x="150" y="184" font-size="15" fill="#334155" font-family="Consolas, monospace">q = 7</text>
+  <text x="56" y="204" font-size="12" fill="#64748b">kept secret; destroyed after keygen</text>
+
+  <!-- Box 2: modulus -->
+  <rect x="330" y="132" width="250" height="82" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="346" y="158" font-size="14" font-weight="600" fill="#0f172a">2 · Build the modulus</text>
+  <text x="346" y="184" font-size="15" fill="#334155" font-family="Consolas, monospace">n = p·q = 21</text>
+  <text x="346" y="205" font-size="14" fill="#334155" font-family="Consolas, monospace">φ(n) = (p−1)(q−1) = 12</text>
+
+  <!-- Box 3: public key -->
+  <rect x="660" y="104" width="220" height="52" rx="8" fill="#eff6ff" stroke="#2563eb"/>
+  <text x="676" y="127" font-size="13" font-weight="700" fill="#1d4ed8">PUBLIC KEY</text>
+  <text x="676" y="147" font-size="14" fill="#1e293b" font-family="Consolas, monospace">(n, e) = (21, 5)</text>
+
+  <!-- Box 4: private key -->
+  <rect x="660" y="190" width="220" height="66" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+  <text x="676" y="213" font-size="13" font-weight="700" fill="#b91c1c">PRIVATE KEY</text>
+  <text x="676" y="233" font-size="14" fill="#1e293b" font-family="Consolas, monospace">(n, d) = (21, 5)</text>
+  <text x="676" y="250" font-size="12" fill="#7f1d1d" font-family="Consolas, monospace">d = e⁻¹ mod φ(n)</text>
+
+  <!-- Arrows keygen -->
+  <line x1="260" y1="173" x2="330" y2="173" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M580,168 C610,168 620,130 660,130" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M580,180 C610,180 620,222 660,222" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Divider -->
+  <line x1="40" y1="300" x2="880" y2="300" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- ===================== COMMUNICATION ===================== -->
+  <text x="40" y="338" font-size="13" font-weight="700" letter-spacing="1.5" fill="#2563eb">COMMUNICATION OVER AN OPEN WIRE</text>
+
+  <!-- Sender -->
+  <rect x="40" y="356" width="250" height="96" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="56" y="381" font-size="14" font-weight="700" fill="#15803d">Sender · uses public key</text>
+  <text x="56" y="408" font-size="15" fill="#1e293b" font-family="Consolas, monospace">c = mᵉ mod n</text>
+  <text x="56" y="432" font-size="14" fill="#334155" font-family="Consolas, monospace">= 4⁵ mod 21 = 16</text>
+
+  <!-- Receiver -->
+  <rect x="630" y="356" width="250" height="96" rx="8" fill="#f0fdf4" stroke="#16a34a"/>
+  <text x="646" y="381" font-size="14" font-weight="700" fill="#15803d">Receiver · uses private key</text>
+  <text x="646" y="408" font-size="15" fill="#1e293b" font-family="Consolas, monospace">m = cᵈ mod n</text>
+  <text x="646" y="432" font-size="14" fill="#334155" font-family="Consolas, monospace">= 16⁵ mod 21 = 4</text>
+
+  <!-- Channel arrow -->
+  <line x1="290" y1="404" x2="630" y2="404" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="460" y="394" font-size="13" fill="#64748b" text-anchor="middle">ciphertext c = 16</text>
+  <text x="460" y="424" font-size="12" fill="#94a3b8" text-anchor="middle" font-style="italic">insecure channel — anyone can listen</text>
+
+  <!-- Attacker -->
+  <rect x="315" y="500" width="290" height="92" rx="8" fill="#fff7ed" stroke="#dc2626" stroke-dasharray="6 4"/>
+  <text x="331" y="525" font-size="14" font-weight="700" fill="#b91c1c">Attacker · sees only (n, e) and c</text>
+  <text x="331" y="549" font-size="13" fill="#7f1d1d">The whole attack reduces to one hard step:</text>
+  <text x="331" y="570" font-size="13.5" fill="#1e293b" font-family="Consolas, monospace">factor n → (p, q) → recover d → read m</text>
+  <line x1="460" y1="500" x2="460" y2="414" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowRed)"/>
+
+  <!-- Footnote -->
+  <text x="40" y="622" font-size="12" fill="#94a3b8">Note: for n = 21, e = d = 5 — a small-modulus artifact (the units mod 12 have exponent 2). Real keys have e ≠ d (commonly e = 65537).</text>
+</svg>
